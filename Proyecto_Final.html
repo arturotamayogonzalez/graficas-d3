@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="">
+
+<head>
+
+    <style>
+        p {
+            font: 17px sans-serif;
+        }
+
+        h4 {
+            font: sans-serif;
+        }
+
+        button:hover {
+            background: rgba(0, 0, 0, 0);
+            color: #3a7999;
+            box-shadow: inset 0 0 0 3px #3a7999;
+        }
+
+        button {
+            border: none;
+            background: #3a7999;
+            color: #f2f2f2;
+            padding: 10px;
+            font-size: 15px;
+            border-radius: 5px;
+            position: relative;
+            box-sizing: border-box;
+            transition: all 500ms ease;
+        }
+
+        .opciones,
+        .Textos {
+            text-align: center;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .y.axis .tick {
+            stroke: #666;
+        }
+
+        .axis text {
+            font-size: 14px;
+        }
+
+        .y text {
+            fill: #666;
+            font-weight: normal;
+        }
+
+        .y.axis .tick.minor {
+            stroke: #DFDFDF;
+        }
+
+        .y.axis path {
+            display: none;
+        }
+
+        .x.axis .tick {
+            stroke: #555;
+        }
+
+        .x.axis .domain {
+            stroke: #666;
+        }
+
+        .x.axis text {
+            fill: #666;
+        }
+
+        div.tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 2px;
+            font: 15px sans-serif;
+            background-color: #E9ECEB;
+            border: 2px;
+            border-radius: 5px;
+            pointer-events: none;
+        }
+
+    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Final</title>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+
+</head>
+
+<body>
+
+    <div class="opciones">
+        <button id="Participantes">Participantes</button>
+        <button id="Preparacion">Preparación Profesional</button>
+        <button id="Eleccion">Linea de Desarrollo</button>
+        <button id="Resultados">Resultados de Examen</button>
+        <button id="Analisis">Aceptados por Licenciatura</button>
+        <button id="AnalisisInstitucion">Aceptados por Institucion</button>
+    </div>
+
+    <div class="Textos">
+        <h4 id="Titulo"></h4>
+        <p id="Texto"></p>
+        <p id="Texto2"></p>
+    </div>
+
+    <script type="text/javascript">
+        //Definiendo tamaño de svg
+        var w = 1000;
+        var h = 550;
+        var espacio = 140;
+        var espacioarriba = 50;
+
+        // Datos 2018
+        d3.csv("2018.csv", function(data) {
+            data.forEach(function(d) {
+                d.Promedio = +d.Promedio;
+                d.Sumatoria = +d.Sumatoria;
+                d.Edad = +d.Edad;
+                d.Resultados_de_examen = +d.Resultados_de_examen
+            })
+            console.log(data);
+
+            //Escalas de ejes X 
+
+            var LineaDesarrolloScale = d3.scale.ordinal()
+                .domain(data.map(function(d) {
+                    return d.Linea_de_desarrollo;
+                }))
+                .rangeRoundBands([espacio, w - espacio], .1);
+
+            var ResidenciaScale = d3.scale.ordinal()
+                .domain(data.map(function(d) {
+                    return d.Residencia;
+                }))
+                .rangeRoundBands([espacio, w - espacio], .1);
+
+            var InstitucionScale = d3.scale.ordinal()
+                .domain(data.map(function(d) {
+                    return d.Institucion_de_procedencia;
+                }))
+                .rangeRoundBands([espacio, w - espacio], .1);
+
+            var LicenciaturaScale = d3.scale.ordinal()
+                .domain(data.map(function(d) {
+                    return d.Licenciatura;
+                }))
+                .rangeRoundBands([espacio, w - espacio], .1);
+
+            var ResultadoExamenScale = d3.scale.linear()
+                .domain([0, d3.max(data, function(d) {
+                    return d.Resultados_de_examen;
+                })])
+                .range([espacio, w - espacio]);
+
+            //Escalas de ejes Y
+
+            var PromedioScale = d3.scale.linear()
+                .domain([7.5, d3.max(data, function(d) {
+                    return d.Promedio;
+                })])
+                .range([h - espacio, espacioarriba]);
+
+            var EdadScale = d3.scale.linear()
+                .domain([20, d3.max(data, function(d) {
+                    return d.Edad;
+                })])
+                .range([h - espacio, espacioarriba]);
+
+            var SumatoriaScale = d3.scale.linear()
+                .domain([0, d3.max(data, function(d) {
+                    return d.Sumatoria;
+                })])
+                .range([h - espacio, espacioarriba]);
+
+            //Escalas de Radio de circulos
+
+            var EdadRadioScale = d3.scale.linear()
+                .domain([0, d3.max(data, function(d) {
+                    return d.Edad;
+                })])
+                .range([5, 20]);
+
+
+            //Axis para poder crear ejes X -
+            var ResidenciaAxis = d3.svg.axis()
+                .scale(ResidenciaScale)
+                .orient("bottom");
+
+            var LicenciaturaAxis = d3.svg.axis()
+                .scale(LicenciaturaScale)
+                .orient("bottom");
+
+            var LineaAxis = d3.svg.axis()
+                .scale(LineaDesarrolloScale)
+                .orient("bottom");
+
+            var ResultadoExamenAxis = d3.svg.axis()
+                .scale(ResultadoExamenScale)
+                .orient("bottom");
+
+            var InstucionAxis = d3.svg.axis()
+                .scale(InstitucionScale)
+                .orient("bottom");
+
+            //Axis para poder crear ejes Y |
+            var EdadAxis = d3.svg.axis()
+                .scale(EdadScale)
+                .orient("left");
+
+            var PromedioAxis = d3.svg.axis()
+                .scale(PromedioScale)
+                .orient("left");
+
+            var SumatoriaAxis = d3.svg.axis()
+                .scale(SumatoriaScale)
+                .orient("left");
+
+            //Div para tooltip
+            var div = d3.select("body")
+                .append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+            //Creando SVG
+            var svg = d3.selectAll("body")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h)
+                .attr("position", "absolute");
+
+            //Creando circulos
+            svg.selectAll("circle")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", function(d) {
+                    return ResidenciaScale(d.Residencia);
+                })
+                .attr("cy", function(d) {
+                    return EdadScale(d.Edad);
+                })
+                .attr("r", function(d) {
+                    return EdadRadioScale(d.Edad);
+                })
+                .attr("opacity", 0.7)
+                .attr("fill", function(d) {
+                    if ((d.Genero) == "Femenino")
+                        return ("Pink")
+                    else
+                        return ("steelblue");
+                })
+                .on("click", function (d){
+                d3.select(this).attr({
+                stroke: "black"
+            });
+            })
+                .on("mouseover", function(d) {
+                    d3.select(this).attr({
+                        stroke: "black",
+                    });
+                    div.transition()
+                        .duration(200)
+                        .style("opacity", .8);
+                    div.html("<h2>Nombre</h2> " + "<h4>" + d.Edad + " años </h4>" + d.Residencia + "<br>" + d.Institucion_de_procedencia + "<br>" + d.Licenciatura + "<br>" + "<h4>" + d.Opinion_de_la_comision + "</h4>" + d.Comentario_de_la_comision)
+                        .style("left", (d3.event.pageX + 20) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+
+                .on("mouseout", function(d) {
+                    d3.select(this).attr({
+                        stroke: "none",
+                    });
+                    div.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            document.getElementById("Titulo").innerHTML = "REGRISTRO A MADIC";
+            document.getElementById("Texto").innerHTML = "Los participantes se registran para poder ganar un lugar dentro de la Maestria."
+            document.getElementById("Texto2").innerHTML = "Se inscriben personas de toda la republica y de multiples edades";
+
+            //Creando ejes X y Y
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + (h - espacio + 10) + ")")
+                .call(ResidenciaAxis)
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-.8em")
+                .attr("dy", "-8")
+                .attr("transform", "rotate(-40)")
+
+            svg.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + (espacio - 10) + ".0)")
+                .call(EdadAxis)
+                .append("text")
+                .attr("class", "label")
+                //.attr("transform", "rotate(-90)")
+                .attr("y", espacioarriba - 30)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end")
+                .text("Edad");
+
+            /////Funcion de boton Participantes        
+            d3.select("#Participantes")
+                .on("click", function() {
+
+                    document.getElementById("Titulo").innerHTML = "REGRISTRO A MADIC";
+                    document.getElementById("Texto").innerHTML = "Los participantes se registran para poder ganar un lugar dentro de la Maestria."
+                    document.getElementById("Texto2").innerHTML = "Se inscriben personas de toda la republica y de multiples edades";
+
+                    svg.selectAll("g").remove()
+
+                    //Modificando valores en eje X
+                    svg.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + (h - espacio + 10) + ")")
+                        .call(ResidenciaAxis)
+                        .selectAll("text")
+                        .style("text-anchor", "end")
+                        .attr("dx", "-.8em")
+                        .attr("dy", "-8")
+                        .attr("transform", "rotate(-40)");
+
+                    //Modificando valores en eje X
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .attr("transform", "translate(" + (espacio - 10) + ".0)")
+                        .call(EdadAxis)
+                        .append("text")
+                        //.attr("transform", "rotate(-90)")
+                        .attr("y", espacioarriba - 30)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text("Edad");
+
+                    //Modificando los valores en los circulos
+                    svg.selectAll("circle")
+                        .data(data)
+                        .transition()
+                        .duration(3000)
+                        .attr("cx", function(d) {
+                            return ResidenciaScale(d.Residencia);
+                        })
+                        .attr("cy", function(d) {
+                            return EdadScale(d.Edad);
+                        })
+                        .attr("opacity", 0.7)
+                        .attr("fill", function(d) {
+                            if ((d.Genero) == "Femenino")
+                                return ("Pink")
+                            else
+                                return ("steelblue");
+                        });
+                })
+
+            /////Funcion de boton preparacion        
+            d3.select("#Preparacion")
+                .on("click", function() {
+
+                    document.getElementById("Titulo").innerHTML = "HISTORIAL ACADEMICO";
+                    document.getElementById("Texto").innerHTML = "Los participantes vienen de distintas Licenciaturas"
+                    document.getElementById("Texto2").innerHTML = "Y sobre todo existe una gran variedad de promedios universitarios";
+
+                    svg.selectAll("g").remove()
+
+                    //Modificando valores en eje X
+                    svg.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + (h - espacio + 5) + ")")
+                        .call(LicenciaturaAxis)
+                        .selectAll("text")
+                        .style("text-anchor", "end")
+                        .attr("dx", "-.8em")
+                        .attr("transform", "rotate(-20)");
+
+                    //modificando valores en eje Y
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .attr("transform", "translate(" + (espacio - 10) + ".0)")
+                        .call(PromedioAxis)
+                        .append("text")
+                        //.attr("transform", "rotate(-90)")
+                        .attr("y", espacioarriba - 30)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text("Promedio");
+
+                    //Modificando los valores en los circulos
+                    svg.selectAll("circle")
+                        .data(data)
+                        .transition()
+                        .duration(3000)
+                        .attr("cx", function(d) {
+                            return LicenciaturaScale(d.Licenciatura);
+                        })
+                        .attr("cy", function(d) {
+                            return PromedioScale(d.Promedio);
+                        }).attr("opacity", 0.7)
+                        .attr("fill", function(d) {
+                            if ((d.Genero) == "Femenino")
+                                return ("Pink")
+                            else
+                                return ("steelblue");
+                        });
+                })
+
+            /////Funcion de boton Linea de desarrollo  
+            d3.select("#Eleccion")
+                .on("click", function() {
+
+                    document.getElementById("Titulo").innerHTML = "ELECCION DE LINEA DE DESARROLLO";
+                    document.getElementById("Texto").innerHTML = "Los participantes se inclinan por la linea de desarrollo que mas les interese"
+                    document.getElementById("Texto2").innerHTML = " ";
+
+                    svg.selectAll("g").remove()
+
+                    //Modificando valores en eje X
+                    svg.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + (h - espacio + 5) + ")")
+                        .call(LineaAxis)
+                        .selectAll("text")
+                        .style("text-anchor", "end")
+                        .attr("dx", "-.8em")
+                        .attr("transform", "rotate(-20)");
+
+                    //modificando valores en eje Y
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .attr("transform", "translate(" + (espacio - 10) + ".0)")
+                        .call(PromedioAxis)
+                        .append("text")
+                        //.attr("transform", "rotate(-90)")
+                        .attr("y", espacioarriba - 30)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text("Promedio");
+
+                    //Modificando los valores en los circulos
+                    svg.selectAll("circle")
+                        .data(data)
+                        .transition()
+                        .duration(3000)
+                        .attr("cx", function(d) {
+                            return LineaDesarrolloScale(d.Linea_de_desarrollo);
+                        })
+                        .attr("cy", function(d) {
+                            return PromedioScale(d.Promedio);
+                        }).attr("opacity", 0.7)
+                        .attr("fill", function(d) {
+                            if ((d.Genero) == "Femenino")
+                                return ("Pink")
+                            else
+                                return ("steelblue");
+                        });
+                })
+
+            /////Funcion de boton Resultados de examen  
+            d3.select("#Resultados")
+                .on("click", function() {
+
+                    document.getElementById("Titulo").innerHTML = "APLICACION DE EXAMEN Y RESULTADOS";
+                    document.getElementById("Texto").innerHTML = "MADIC aplica un par de pruebas que son una entrevista y un examen escrito"
+                    document.getElementById("Texto2").innerHTML = "Se necesita una sumatoria respectivamente alta y un examen escrito bueno para poder ser aceptado"
+
+                    svg.selectAll("g").remove()
+
+                    //Modificando valores en eje X
+                    svg.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + (h - espacio + 5) + ")")
+                        .call(ResultadoExamenAxis)
+                        .append("text")
+                        .attr("class", "label")
+                        .attr("x", w)
+                        .attr("y", -6)
+                        .style("text-anchor", "end")
+                        .text("Resultado de Examen Escrito");
+
+                    //modificando valores en eje Y
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .attr("transform", "translate(" + (espacio - 10) + ".0)")
+                        .call(SumatoriaAxis)
+                        .append("text")
+                        //.attr("transform", "rotate(-90)")
+                        .attr("y", espacioarriba - 30)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text("Sumatoria");
+
+                    //Modificando los valores en los circulos
+                    svg.selectAll("circle")
+                        .data(data)
+                        .transition()
+                        .duration(3000)
+                        .attr("cx", function(d) {
+                            return ResultadoExamenScale(d.Resultados_de_examen);
+                        })
+                        .attr("cy", function(d) {
+                            return SumatoriaScale(d.Sumatoria);
+                        })
+                        .attr("opacity", 0.7)
+                        .attr("fill", function(d) {
+                            if ((d.Nivel_de_examen_escrito) == "Basico")
+                                return ("Green")
+                            if ((d.Nivel_de_examen_escrito) == "Medio")
+                                return ("Orange");
+                            else
+                                return ("Black");
+                        });
+                })
+
+            /////Funcion de boton Analisis 
+            d3.select("#Analisis")
+                .on("click", function() {
+
+                    document.getElementById("Titulo").innerHTML = "PARTICIPANTES ACEPTADOS";
+                    document.getElementById("Texto").innerHTML = "Algunas veces no importa el promedio, si no el desempeño que haya tenido el participante y la actitud que muestra"
+                    document.getElementById("Texto2").innerHTML = " "
+
+                    svg.selectAll("g").remove()
+
+                    //Modificando valores en eje X
+                    svg.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + (h - espacio + 5) + ")")
+                        .call(LicenciaturaAxis)
+                        .selectAll("text")
+                        .style("text-anchor", "end")
+                        .attr("dx", "-.8em")
+                        .attr("transform", "rotate(-20)");
+
+                    //modificando valores en eje Y
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .attr("transform", "translate(" + (espacio - 10) + ".0)")
+                        .call(PromedioAxis)
+                        .append("text")
+                        //.attr("transform", "rotate(-90)")
+                        .attr("y", espacioarriba - 30)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text("Promedio");
+
+                    //Modificando los valores en los circulos
+                    svg.selectAll("circle")
+                        .data(data)
+                        .transition()
+                        .duration(3000)
+                        .attr("cx", function(d) {
+                            return LicenciaturaScale(d.Licenciatura);
+                        })
+                        .attr("cy", function(d) {
+                            return PromedioScale(d.Promedio);
+                        }).attr("opacity", 0.7)
+                        .attr("fill", function(d) {
+                            if ((d.Opinion_de_la_comision) == "Aceptado")
+                                return ("Green")
+                            else
+                                return ("Red");
+                        });
+                })
+            /////Funcion de boton Analisis 
+            d3.select("#AnalisisInstitucion")
+                .on("click", function() {
+
+                    document.getElementById("Titulo").innerHTML = "PARTICIPANTES ACEPTADOS";
+                    document.getElementById("Texto").innerHTML = "No importa de que institucion venga el interesado lo que realmente importa es el desempeño en las pruebas"
+                    document.getElementById("Texto2").innerHTML = " "
+
+                    svg.selectAll("g").remove()
+
+                    //Modificando valores en eje X
+                    svg.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + (h - espacio + 5) + ")")
+                        .call(InstucionAxis)
+                        .selectAll("text")
+                        .style("text-anchor", "end")
+                        .attr("dx", "-.8em")
+                        .attr("transform", "rotate(-30)");
+
+                    //modificando valores en eje Y
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .attr("transform", "translate(" + (espacio - 10) + ".0)")
+                        .call(PromedioAxis)
+                        .append("text")
+                        //.attr("transform", "rotate(-90)")
+                        .attr("y", espacioarriba - 30)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text("Promedio");
+
+                    //Modificando los valores en los circulos
+                    svg.selectAll("circle")
+                        .data(data)
+                        .transition()
+                        .duration(3000)
+                        .attr("cx", function(d) {
+                            return InstitucionScale(d.Institucion_de_procedencia);
+                        })
+                        .attr("cy", function(d) {
+                            return PromedioScale(d.Promedio);
+                        }).attr("opacity", 0.7)
+                        .attr("fill", function(d) {
+                            if ((d.Opinion_de_la_comision) == "Aceptado")
+                                return ("Green")
+                            else
+                                return ("Red");
+                        });
+                })
+        });
+
+    </script>
+
+</body>
+
+</html>
